@@ -1,5 +1,10 @@
 package com.first.firstapp.services;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -12,14 +17,16 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.first.firstapp.dao.coursesdao;
 import com.first.firstapp.entities.course;
+
 @Service
 public class courseserviceimpl implements courseservice {
 
 //	List<course> list;
 	@Autowired
 	private coursesdao cdao;
+
 	public courseserviceimpl() {
-		
+
 //		list=new ArrayList<>();
 //		list.add(new course(1,"Course 1","just a course"));
 //		list.add(new course(2,"Course 2","just a course"));
@@ -44,7 +51,7 @@ public class courseserviceimpl implements courseservice {
 //			
 //		}
 //		return c;
-		course course=cdao.findById(courseid).get();
+		course course = cdao.findById(courseid).get();
 		return course;
 	}
 
@@ -89,36 +96,65 @@ public class courseserviceimpl implements courseservice {
 //			}
 //		}
 //		return d;
-		course entCourse=cdao.getOne(courseid);
+		course entCourse = cdao.getOne(courseid);
 		cdao.delete(entCourse);
 		return entCourse;
 	}
-	public Map<String,Object> getfilt(Map<String, String>params)
-	{
-		List<course> foundCourses=new ArrayList<course>();
-		List<course> courses=cdao.findAll();
-		for(course c:courses)
-		{
-			boolean ismatched=true;
-			for (Map.Entry<String,String> entry : params.entrySet()) {
-              
-				
-				if(!entry.getValue().equals(c.getProperty(entry.getKey())))
-					{
-					System.err.println(entry.getValue()+c.getProperty(entry.getKey()));
-					ismatched=false;
-					break;
+
+	public Map<String, Object> getfilt(Map<String, String> params) {
+		List<course> foundCourses = new ArrayList<course>();
+		List<course> courses = cdao.findAll();
+		for (course c : courses) {
+			boolean ismatched = true;
+			for (Map.Entry<String, String> entry : params.entrySet()) {
+
+				if(entry.getKey().equals("datebefore")||entry.getKey().equals("dateafter"))
+				{
+				if (params.containsKey("dateafter") && !params.containsKey("datebefore")) {
+					DateTimeFormatter format = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+					LocalDate date = LocalDate.parse(c.getProperty("date"), format);
+					LocalDate paramdateDate = LocalDate.parse(params.get("dateafter"));
+					if (!date.isAfter(paramdateDate)) {
+						ismatched = false;
+						break;
 					}
-	    }
-			
-			if(ismatched)
+
+				} else if (!params.containsKey("dateafter") && params.containsKey("datebefore")) {
+					DateTimeFormatter format = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+					LocalDate date = LocalDate.parse(c.getProperty("date"), format);
+					LocalDate paramdateDate = LocalDate.parse(params.get("datebefore"));
+					if (!date.isBefore(paramdateDate)) {
+						ismatched = false;
+						break;
+					}
+				} else if (params.containsKey("dateafter") && params.containsKey("datebefore")) {
+					DateTimeFormatter format = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+					LocalDate date = LocalDate.parse(c.getProperty("date"), format);
+					LocalDate paramdateDate = LocalDate.parse(params.get("datebefore"),format);
+					LocalDate paramdateDate2 = LocalDate.parse(params.get("dateafter"),format);
+					if (!date.isAfter(paramdateDate2) || !date.isBefore(paramdateDate)) {
+						ismatched = false;
+						break;
+					}
+
+				}}
+				else {
+				if (!entry.getValue().equals(c.getProperty(entry.getKey()))) {
+					System.err.println(entry.getValue() + c.getProperty(entry.getKey()));
+					ismatched = false;
+					break;
+				}}
+			}
+
+			if (ismatched)
 				foundCourses.add(c);
-			
+
 		}
-		Map<String, Object> map=new HashMap<>();
+		Map<String, Object> map = new HashMap<>();
 		map.put("found courses", foundCourses);
 		return map;
 	}
+
 	public String getprocedure() {
 		return cdao.getitout();
 	}
